@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Note Spese</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#14202b;--mut:#64748b;--acc:#0f766e;--acc2:#115e59;--line:#dde3ea;--warn:#b45309;--ok:#15803d}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1419;--card:#17202a;--ink:#e6edf3;--mut:#93a4b5;--line:#2a3743;--acc:#14b8a6;--acc2:#0f766e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:80px}
+header{background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top))}
+header h1{margin:0;font-size:20px}
+header small{opacity:.85}
+nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;padding:12px 4px;font-size:13px;color:var(--mut)}
+nav button.on{color:var(--acc);font-weight:700}
+main{max-width:640px;margin:0 auto;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:16px}
+button.pri{width:100%;padding:14px;border:0;border-radius:12px;background:var(--acc);color:#fff;font-size:17px;font-weight:700;margin-top:14px}
+button.sec{padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:14px}
+button.del{color:#b91c1c}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:14px}
+.chip b{margin-left:6px;color:var(--mut);cursor:pointer}
+#foto{max-width:100%;border-radius:10px;margin-top:8px;display:none}
+.it{display:flex;gap:10px;align-items:center}
+.it img{width:54px;height:54px;object-fit:cover;border-radius:8px;background:var(--bg)}
+.it .t{flex:1;min-width:0}.it .t div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st{font-size:12px;padding:2px 8px;border-radius:999px;background:#fef3c7;color:var(--warn)}
+.st.ok{background:#dcfce7;color:var(--ok)}
+.tot{font-size:26px;font-weight:800}
+.mut{color:var(--mut);font-size:13px}
+.hide{display:none}
+.ck{display:flex;align-items:center;gap:10px;margin-top:12px}.ck input{width:auto;transform:scale(1.4)}
+.ck span{color:var(--ink);font-size:16px}
+</style>
+</head>
+<body>
+<header><h1>🧾 Note Spese</h1><small id="sub">Maury Automation</small></header>
+<main>
+
+<section id="v-nuova">
+ <div class="card">
+  <label>Foto dello scontrino</label>
+  <input type="file" id="file" accept="image/*" capture="environment">
+  <img id="foto" alt="scontrino">
+
+  <label>Farmacia / cliente</label>
+  <input id="farmacia" list="dl-farm" placeholder="Es. Farmacia Rossi" autocomplete="off">
+  <datalist id="dl-farm"></datalist>
+
+  <label>Tipo di spesa</label>
+  <select id="tipo"></select>
+
+  <div id="box-comp" class="hide">
+   <div class="ck"><input type="checkbox" id="compagnia"><span>In compagnia</span></div>
+   <div id="box-nomi" class="hide">
+    <label>Con chi (aggiungi uno o più nomi)</label>
+    <div class="row"><input id="nome" list="dl-nomi" placeholder="Nome e cognome" autocomplete="off"><button class="sec" id="add-nome" style="flex:0 0 auto">Aggiungi</button></div>
+    <datalist id="dl-nomi"></datalist>
+    <div class="chips" id="chips"></div>
+    <div class="mut" id="npers"></div>
+   </div>
+  </div>
+
+  <label>Pagamento</label>
+  <select id="pagamento">
+   <option>Carta aziendale</option>
+   <option>Carta personale</option>
+   <option>Contanti</option>
+  </select>
+
+  <div class="row">
+   <div><label>Importo (€)</label><input id="importo" type="number" inputmode="decimal" step="0.01" placeholder="0,00"></div>
+   <div><label>Data e ora</label><input id="quando" type="datetime-local"></div>
+  </div>
+
+  <label>Posizione</label>
+  <div class="row"><input id="luogo" placeholder="Rilevo la posizione…" readonly><button class="sec" id="geo" style="flex:0 0 auto">📍 Aggiorna</button></div>
+
+  <label>Note (facoltative)</label>
+  <textarea id="note" rows="2"></textarea>
+
+  <button class="pri" id="salva">Salva spesa</button>
+  <div class="mut" id="msg" style="margin-top:8px"></div>
+ </div>
+</section>
+
+<section id="v-lista" class="hide">
+ <div class="card"><div class="mut">Da inviare</div><div class="tot" id="tot-da"></div><div class="mut" id="tot-n"></div>
+  <button class="pri" id="invia-tutte">📧 Invia riepilogo (tutte le spese da inviare)</button>
+ </div>
+ <div id="lista"></div>
+ <div class="card"><button class="sec" id="csv">⬇️ Esporta tutto in CSV</button></div>
+</section>
+
+<section id="v-imp" class="hide">
+ <div class="card">
+  <label>Indirizzo del postino (link Google, termina con /exec)</label>
+  <input id="url" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+  <label>Chiave segreta (la stessa scritta nello script Google)</label>
+  <input id="chiave" type="password" autocomplete="off">
+  <button class="sec" id="prova" style="margin-top:10px">✉️ Invia mail di prova</button>
+  <div class="mut" id="msg-prova" style="margin-top:6px"></div>
+  <label>Indirizzo email (solo per il piano B da PC)</label>
+  <input id="email" type="email" placeholder="nome@esempio.it" autocomplete="off">
+  <label>Tue farmacie / clienti (una per riga)</label>
+  <textarea id="elenco-farm" rows="8"></textarea>
+  <label>Colleghi e persone frequenti (una per riga)</label>
+  <textarea id="elenco-nomi" rows="5"></textarea>
+  <label>Tipi di spesa (una per riga)</label>
+  <textarea id="elenco-tipi" rows="9"></textarea>
+  <button class="pri" id="salva-imp">Salva impostazioni</button>
+ </div>
+ <div class="card mut">I dati restano solo su questo telefono. Nessun server, nessun cloud: le foto escono solo quando le invii tu con la tua posta.</div>
+</section>
+</main>
+
+<nav>
+ <button data-v="nuova" class="on">➕ Nuova</button>
+ <button data-v="lista">📋 Spese</button>
+ <button data-v="imp">⚙️ Impostazioni</button>
+</nav>
+
+<script>
+const TIPI_DEF=["Pranzo","Cena","Carburante","Pedaggio","Parcheggio","Hotel","Treno / Taxi","Fotocopie","Spese ufficio","Altro"];
+const $=id=>document.getElementById(id);
+let fotoBlob=null, pos=null, nomi=[];
+
+/* ---------- archivio (IndexedDB) ---------- */
+let db;
+function apri(){return new Promise((ok,ko)=>{const r=indexedDB.open("notespese",1);
+ r.onupgradeneeded=()=>r.result.createObjectStore("spese",{keyPath:"id",autoIncrement:true});
+ r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>ko(r.error)})}
+const tx=(m)=>db.transaction("spese",m).objectStore("spese");
+const tutte=()=>new Promise(ok=>{const q=tx("readonly").getAll();q.onsuccess=()=>ok(q.result)});
+const metti=s=>new Promise(ok=>{const q=tx("readwrite").put(s);q.onsuccess=()=>ok(q.result)});
+const togli=id=>new Promise(ok=>{const q=tx("readwrite").delete(id);q.onsuccess=()=>ok()});
+
+/* ---------- impostazioni (localStorage) ---------- */
+function imp(){try{return JSON.parse(localStorage.getItem("imp")||"{}")}catch(e){return{}}}
+function salvaImp(o){try{localStorage.setItem("imp",JSON.stringify(o))}catch(e){}}
+function righe(t){return t.split("\n").map(s=>s.trim()).filter(Boolean)}
+function aggiungiUnico(chiave,val){const o=imp();const l=o[chiave]||[];
+ if(val&&!l.some(x=>x.toLowerCase()===val.toLowerCase())){l.push(val);o[chiave]=l;salvaImp(o)}}
+
+function carica(){
+ const o=imp();
+ const tipi=o.tipi&&o.tipi.length?o.tipi:TIPI_DEF;
+ $("tipo").innerHTML=tipi.map(t=>`<option>${t}</option>`).join("");
+ $("dl-farm").innerHTML=(o.farmacie||[]).map(t=>`<option value="${esc(t)}">`).join("");
+ $("dl-nomi").innerHTML=(o.nomi||[]).map(t=>`<option value="${esc(t)}">`).join("");
+ $("email").value=o.email||"";
+ $("url").value=o.url||"";$("chiave").value=o.chiave||"";
+ $("elenco-farm").value=(o.farmacie||[]).join("\n");
+ $("elenco-nomi").value=(o.nomi||[]).join("\n");
+ $("elenco-tipi").value=tipi.join("\n");
+ tipoCambiato();
+}
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+
+/* ---------- form ---------- */
+function adesso(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
+function tipoCambiato(){
+ const t=$("tipo").value.toLowerCase();
+ const pasto=t.startsWith("pranzo")||t.startsWith("cena")||t.includes("colazione");
+ $("box-comp").classList.toggle("hide",!pasto);
+ if(!pasto){$("compagnia").checked=false}
+ $("box-nomi").classList.toggle("hide",!($("compagnia").checked&&pasto));
+}
+function disegnaChips(){
+ $("chips").innerHTML=nomi.map((n,i)=>`<span class="chip">${esc(n)}<b data-i="${i}">✕</b></span>`).join("");
+ $("npers").textContent=nomi.length?`Persone a tavola: ${nomi.length+1} (tu + ${nomi.length})`:"";
+}
+function aggiungiNome(){const n=$("nome").value.trim();if(!n)return;
+ if(!nomi.some(x=>x.toLowerCase()===n.toLowerCase()))nomi.push(n);
+ $("nome").value="";disegnaChips();$("nome").focus()}
+
+function geo(){
+ $("luogo").value="Rilevo la posizione…";
+ if(!navigator.geolocation){$("luogo").value="Posizione non disponibile";return}
+ navigator.geolocation.getCurrentPosition(p=>{
+  pos={lat:+p.coords.latitude.toFixed(6),lon:+p.coords.longitude.toFixed(6)};
+  $("luogo").value=`${pos.lat}, ${pos.lon}`;
+ },()=>{pos=null;$("luogo").value="Posizione non concessa (puoi scrivere il luogo)";$("luogo").readOnly=false;$("luogo").value=""},
+ {enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+}
+
+$("file").addEventListener("change",e=>{
+ const f=e.target.files[0];if(!f)return;fotoBlob=f;
+ const im=$("foto");im.src=URL.createObjectURL(f);im.style.display="block";
+});
+$("tipo").addEventListener("change",tipoCambiato);
+$("compagnia").addEventListener("change",tipoCambiato);
+$("add-nome").addEventListener("click",aggiungiNome);
+$("nome").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();aggiungiNome()}});
+$("chips").addEventListener("click",e=>{const i=e.target.dataset.i;if(i!==undefined){nomi.splice(+i,1);disegnaChips()}});
+$("geo").addEventListener("click",geo);
+
+$("salva").addEventListener("click",async()=>{
+ const farm=$("farmacia").value.trim();
+ const imp_=parseFloat(String($("importo").value).replace(",","."));
+ if(!farm){msg("Scrivi la farmacia.");return}
+ if(!(imp_>=0)||$("importo").value===""){msg("Scrivi l'importo.");return}
+ const s={
+  quando:$("quando").value||adesso(), farmacia:farm, tipo:$("tipo").value, importo:imp_, pagamento:$("pagamento").value,
+  compagnia:$("compagnia").checked&&!$("box-comp").classList.contains("hide"), nomi:[...nomi],
+  luogo:pos?`https://maps.google.com/?q=${pos.lat},${pos.lon}`:"", luogoTesto:$("luogo").value.trim(),
+  note:$("note").value.trim(), foto:fotoBlob, stato:"da inviare"
+ };
+ aggiungiUnico("farmacie",farm);
+ nomi.forEach(n=>aggiungiUnico("nomi",n));
+ await metti(s);
+ // reset
+ fotoBlob=null;$("file").value="";$("foto").style.display="none";
+ $("importo").value="";$("note").value="";$("compagnia").checked=false;nomi=[];disegnaChips();
+ $("quando").value=adesso();carica();tipoCambiato();geo();
+ msg("✅ Salvata. La trovi in «Spese» per inviarla.");
+ aggiorna();
+});
+function msg(t){$("msg").textContent=t}
+
+/* ---------- testo mail ---------- */
+const eur=n=>n.toLocaleString("it-IT",{style:"currency",currency:"EUR"});
+const dtxt=q=>{const d=new Date(q);return d.toLocaleDateString("it-IT")+" "+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};
+function righeSpesa(s){
+ const r=[`Farmacia/cliente: ${s.farmacia}`,`Data e ora: ${dtxt(s.quando)}`,`Tipo: ${s.tipo}`,`Importo: ${eur(s.importo)}`,`Pagamento: ${s.pagamento||"—"}`];
+ if(s.compagnia&&s.nomi.length)r.push(`In compagnia di: ${s.nomi.join(", ")} (${s.nomi.length+1} persone)`);
+ else if(s.compagnia)r.push("In compagnia");
+ if(s.luogo)r.push(`Luogo: ${s.luogo}`);else if(s.luogoTesto)r.push(`Luogo: ${s.luogoTesto}`);
+ if(s.note)r.push(`Note: ${s.note}`);
+ return r;
+}
+function oggetto(s){return `Spesa ${dtxt(s.quando)} – ${s.farmacia} – ${s.tipo} – ${eur(s.importo)} – ${s.pagamento||""}`}
+function nomeFile(s,i){return `scontrino_${s.quando.slice(0,10)}_${(s.farmacia||"").replace(/[^\w]+/g,"_")}_${i+1}.jpg`}
+
+/* ---------- invio diretto tramite il postino (Google Apps Script) ---------- */
+function testoDi(lista){
+ return lista.map((s,i)=>(lista.length>1?`#${i+1}\n`:"")+righeSpesa(s).join("\n")).join("\n\n")
+  +(lista.length>1?`\n\nTotale: ${eur(lista.reduce((a,s)=>a+s.importo,0))}`:"");
+}
+function inBase64(blob){return new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=ko;r.readAsDataURL(blob)})}
+async function piccola(blob){ // riduce la foto (max 1600 px) per una mail leggera
+ try{
+  const bmp=await createImageBitmap(blob);const k=Math.min(1,1600/Math.max(bmp.width,bmp.height));
+  const c=document.createElement("canvas");c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+  c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise(ok=>c.toBlob(b=>ok(b||blob),"image/jpeg",0.82));
+ }catch(e){return blob}
+}
+async function spedisci(lista,titolo){
+ const o=imp();
+ const foto=[];
+ for(let i=0;i<lista.length;i++){const s=lista[i];
+  if(s.foto){const b=await piccola(s.foto);foto.push({nome:nomeFile(s,i),tipo:"image/jpeg",base64:await inBase64(b)})}}
+ const r=await fetch(o.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+  body:JSON.stringify({chiave:o.chiave,oggetto:titolo,testo:testoDi(lista),foto})});
+ const j=await r.json();
+ if(!j.ok)throw new Error(j.errore||"errore del postino");
+}
+async function invia(lista,titolo){
+ const o=imp();
+ if(!lista.length)return alert("Nessuna spesa da inviare.");
+ if(!o.url||!o.chiave)return inviaCondividi(lista,titolo);
+ const g=String(Date.now());
+ for(const s of lista){s.stato="in coda";s.gruppo=g;s.titolo=titolo;await metti(s)}
+ await aggiorna();
+ await riprova();
+}
+let invioInCorso=false;
+async function riprova(){
+ if(invioInCorso||!imp().url)return;invioInCorso=true;
+ try{
+  const coda=(await tutte()).filter(s=>s.stato==="in coda");
+  const gruppi={};coda.forEach(s=>(gruppi[s.gruppo]=gruppi[s.gruppo]||[]).push(s));
+  for(const g of Object.keys(gruppi)){
+   const l=gruppi[g].sort((a,b)=>a.quando.localeCompare(b.quando));
+   try{await spedisci(l,l[0].titolo);for(const s of l){s.stato="inviata";await metti(s)}msg("✅ Mail inviata.")}
+   catch(e){msg("📶 Non partita ("+(e.message||e)+"): resta in coda e riprovo appena possibile.");break}
+  }
+ }finally{invioInCorso=false;aggiorna()}
+}
+window.addEventListener("online",riprova);
+$("prova").addEventListener("click",async()=>{
+ const o={url:$("url").value.trim(),chiave:$("chiave").value.trim()};
+ if(!o.url||!o.chiave){$("msg-prova").textContent="Compila link e chiave.";return}
+ $("msg-prova").textContent="Invio…";
+ try{
+  const r=await fetch(o.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+   body:JSON.stringify({chiave:o.chiave,oggetto:"Prova Note Spese",testo:"Se leggi questa mail, il postino funziona. ✅",foto:[]})});
+  const t=await r.text();let j;
+  try{j=JSON.parse(t)}catch(e){
+   $("msg-prova").textContent="❌ Risposta non valida (HTTP "+r.status+"). Probabile accesso non su «Chiunque» o link sbagliato. Inizio risposta: "+t.replace(/<[^>]*>/g," ").trim().slice(0,100);return}
+  $("msg-prova").textContent=j.ok?"✅ Mail di prova inviata: controlla la posta.":"❌ "+(j.errore||"errore");
+ }catch(e){
+  const u=$("url").value.trim();
+  $("msg-prova").textContent="❌ Il browser non ha ricevuto risposta ("+(e.message||e)+")."
+   +(u.endsWith("/exec")?"":" Il link NON finisce con /exec.")
+   +(u.startsWith("https://script.google.com/macros/s/")?"":" Il link non inizia con https://script.google.com/macros/s/.")}
+});
+
+async function inviaCondividi(lista,titolo){
+ if(!lista.length)return alert("Nessuna spesa da inviare.");
+ const testo=lista.map((s,i)=>(lista.length>1?`#${i+1}\n`:"")+righeSpesa(s).join("\n")).join("\n\n")
+  +(lista.length>1?`\n\nTotale: ${eur(lista.reduce((a,s)=>a+s.importo,0))}`:"");
+ const files=lista.filter(s=>s.foto).map((s,i)=>new File([s.foto],nomeFile(s,i),{type:s.foto.type||"image/jpeg"}));
+ const dest=imp().email||"";
+ try{
+  if(navigator.canShare&&files.length&&navigator.canShare({files})){
+   await navigator.share({title:titolo,text:testo+(dest?`\n\n(Invia a: ${dest})`:""),files});
+  }else if(navigator.share&&!files.length){
+   await navigator.share({title:titolo,text:testo});
+  }else throw new Error("nofile");
+ }catch(e){
+  if(e&&e.name==="AbortError")return;
+  // piano B (PC): scarica le foto e apre la mail con il testo
+  files.forEach(f=>{const a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=f.name;a.click()});
+  location.href=`mailto:${encodeURIComponent(dest)}?subject=${encodeURIComponent(titolo)}&body=${encodeURIComponent(testo+(files.length?"\n\n(Allega le foto appena scaricate)":""))}`;
+ }
+ if(confirm("Hai inviato la mail? Segno queste spese come inviate.")){
+  for(const s of lista){s.stato="inviata";await metti(s)}aggiorna();
+ }
+}
+
+/* ---------- lista ---------- */
+async function aggiorna(){
+ const l=(await tutte()).sort((a,b)=>b.quando.localeCompare(a.quando));
+ const da=l.filter(s=>s.stato!=="inviata");
+ $("tot-da").textContent=eur(da.reduce((a,s)=>a+s.importo,0));
+ const rimb=da.filter(s=>s.pagamento!=="Carta aziendale").reduce((a,s)=>a+s.importo,0);
+ $("tot-n").textContent=`${da.length} spese da inviare · di cui da rimborsarti (carta personale e contanti): ${eur(rimb)}`;
+ $("lista").innerHTML=l.map(s=>`<div class="card it" data-id="${s.id}">
+  ${s.foto?`<img src="${URL.createObjectURL(s.foto)}">`:`<img alt="">`}
+  <div class="t"><div><b>${esc(s.farmacia)}</b> · ${esc(s.tipo)}</div>
+  <div class="mut">${dtxt(s.quando)}${s.compagnia&&s.nomi.length?` · con ${esc(s.nomi.join(", "))}`:""}</div>
+  <div>${eur(s.importo)} · ${esc(s.pagamento||"")} <span class="st ${s.stato==="inviata"?"ok":""}">${s.stato}</span></div></div>
+  <div style="display:flex;flex-direction:column;gap:6px"><button class="sec" data-a="invia">📧</button><button class="sec del" data-a="del">🗑</button></div>
+ </div>`).join("")||`<div class="card mut">Nessuna spesa ancora.</div>`;
+}
+$("lista").addEventListener("click",async e=>{
+ const b=e.target.closest("button");if(!b)return;
+ const id=+b.closest(".card").dataset.id;
+ const s=(await tutte()).find(x=>x.id===id);
+ if(b.dataset.a==="del"){if(confirm("Eliminare questa spesa?")){await togli(id);aggiorna()}}
+ else if(b.dataset.a==="invia")invia([s],oggetto(s));
+});
+$("invia-tutte").addEventListener("click",async()=>{
+ const da=(await tutte()).filter(s=>s.stato!=="inviata").sort((a,b)=>a.quando.localeCompare(b.quando));
+ invia(da,`Riepilogo spese – ${da.length} scontrini – ${eur(da.reduce((a,s)=>a+s.importo,0))}`);
+});
+$("csv").addEventListener("click",async()=>{
+ const l=await tutte();
+ const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+ const c=["Data;Farmacia;Tipo;Importo;Pagamento;In compagnia;Con;Luogo;Note;Stato"].concat(l.map(s=>
+  [s.quando,s.farmacia,s.tipo,String(s.importo).replace(".",","),s.pagamento,s.compagnia?"sì":"no",s.nomi.join(" / "),s.luogo||s.luogoTesto,s.note,s.stato].map(q).join(";")));
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+c.join("\n")],{type:"text/csv"}));
+ a.download="note_spese.csv";a.click();
+});
+
+/* ---------- impostazioni e navigazione ---------- */
+$("salva-imp").addEventListener("click",()=>{
+ salvaImp({url:$("url").value.trim(),chiave:$("chiave").value.trim(),email:$("email").value.trim(),farmacie:righe($("elenco-farm").value),nomi:righe($("elenco-nomi").value),tipi:righe($("elenco-tipi").value)});
+ carica();alert("Impostazioni salvate.");
+});
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+ ["nuova","lista","imp"].forEach(v=>$("v-"+v).classList.toggle("hide",v!==b.dataset.v));
+ if(b.dataset.v==="lista")aggiorna();
+}));
+
+(async()=>{
+ await apri();carica();$("quando").value=adesso();geo();aggiorna();riprova();
+ if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
